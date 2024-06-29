@@ -1,0 +1,72 @@
+    <style>
+        .ready {
+            color: rgb(85, 255, 0);
+        }
+        .notReady {
+            color: rgb(246, 0, 0);
+        }
+        section {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+        article {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 75vw;
+        }
+    </style>
+
+    <article>
+        <h1>
+            Мои задачи
+        </h1>
+
+        <div></div>
+        <section>
+            <button onclick="exit()">Выйти из аккаунта</button><button style="float: right;" onclick="deleteAccount()">Удалить аккаунт</button>
+        </section>
+        <div></div>
+
+        <section>
+            <h2>Создание задачи</h2>
+            <textarea id="aboutToDo" placeholder="Описание задачи"></textarea>
+            <br>
+            <label>Тег: </label>
+            <form name="tag">
+                <select name="selectTag">
+                    {{range .Tags}}
+                    <option value="{{ . }}">{{ . }}</option>
+                    {{end}}
+                </select>
+            </form>
+            <br>
+            <button onclick="newToDo()">Создать!</button>
+        </section>
+        <div></div>
+
+        <section>
+            <h2>Невыполненные задачи</h2>
+            <ul>
+                {{range .NotReady}}
+                    <li><b>Задача:</b> {{.Text}} || <b>Статус:</b> {{if .Status}}<span class="ready">Выполнено!</span>{{else}}<span class="notReady">Не выполнено</span>{{end}} || <b>{{.Tag}}</b> || <button onclick="toggleStatus({{ .Id}})">Изменить статус</button> || <button onclick="deleteTask({{ .Id}})">Удалить</button></li>
+                {{else}}
+                    <li>У вас пока не задач!</li>
+                {{end}}
+            </ul>
+        </section>
+        <div></div>
+
+        <section>
+            <h2>Готово</h2>
+            <ul>
+                {{range .Ready}}
+                    <li><b>Задача:</b> {{.Text}} || <b>Статус:</b> {{if .Status}}<span class="ready">Выполнено!</span>{{else}}<span class="notReady">Не выполнено</span>{{end}} || <b>{{.Tag}}</b> || <button onclick="toggleStatus({{ .Id}})">Изменить статус</button> || <button onclick="deleteTask({{ .Id}})">Удалить</button></li>
+                {{else}}
+                    <li>Вы пока ничего не сделали!</li>
+                {{end}}
+            </ul>
+        </section>
+    </article>
