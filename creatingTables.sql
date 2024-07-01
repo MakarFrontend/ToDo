@@ -23,3 +23,7 @@ CREATE TABLE ToDo (
 	FOREIGN KEY (user_id) REFERENCES Users (user_id) ON DELETE CASCADE,
 	FOREIGN KEY (tag_id) REFERENCES Tags (tag_id) ON DELETE SET NULL
 );
+
+/*В таблицу с пользователями похже был добавлен столбец token*/
+ALTER TABLE Users
+ADD token text NOT NULL DEFAULT 'login:333';

@@ -18,6 +18,7 @@ type taskResponse struct {
 /* / */
 func index(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
+		log.Printf("Don't have page: %v; %s", r.Method, r.URL)
 		w.WriteHeader(http.StatusNotFound)
 		http.ServeFile(w, r, "templates/404.html")
 		return
@@ -93,6 +94,15 @@ func getUserLogin(w http.ResponseWriter, r *http.Request) {
 		data.Tags = append(data.Tags, tag)
 	}
 
+	var token string
+	tokenRow := db.QueryRow(loginToken, r.PathValue("login"))
+	if err = tokenRow.Scan(&token); err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		w.Write([]byte("Ошибка на сервере, извините"))
+		return
+	}
+
 	tmp, err := template.ParseFiles("templates/user.html")
 	if err != nil {
 		log.Println(err)
@@ -101,5 +111,6 @@ func getUserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Add("token", token)
 	tmp.Execute(w, data)
 }

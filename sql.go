@@ -13,6 +13,11 @@ FROM
 WHERE login = $1
 ORDER BY todo_id;`
 
+/*Взятие токена*/
+const loginToken string = `SELECT CONCAT(login, ':', token)
+FROM Users
+WHERE login = $1`
+
 /*Все теги*/
 const SQLallTags string = `SELECT tag
 FROM Tags;`
@@ -41,7 +46,7 @@ WHERE user_id IN (
 /*----------------------Запросы на добавление данных------------------------------*/
 
 /*Добавление пользователя*/
-const appendUser string = `INSERT INTO Users(login, password) VALUES($1, $2)`
+const appendUser string = `INSERT INTO Users(login, password, token) VALUES($1, $2, $3)`
 
 /*-----------------------------Запросы на удаление--------------------------------*/
 

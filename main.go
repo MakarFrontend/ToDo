@@ -8,7 +8,27 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
+
+func middleWare(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("token")
+		log.Printf("Request URL: %s; Token: %v", r.URL, token)
+		if token == "" || !strings.Contains(token, ":") {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("Отказано в доступе. 403"))
+			return
+		}
+		if userHaveToken(token) {
+			h.ServeHTTP(w, r)
+		} else {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("Отказано в доступе. 403"))
+			return
+		}
+	})
+}
 
 func main() {
 	fileLog, err := os.OpenFile("app.log", os.O_APPEND, 0666)
@@ -19,21 +39,30 @@ func main() {
 
 	log.SetOutput(fileLog)
 
-	http.HandleFunc("GET /user/{login}", getUserLogin) //Задачи пользователя Query: ?password=123456
-	http.HandleFunc("GET /content", getContent)
-
-	http.HandleFunc("POST /new/user", postNewUser)                      //Новый пользователь Query: ?password=123456&login=qwerty
-	http.HandleFunc("POST /user/{login}/new/task", postNewTask)         //Новая задача
-	http.HandleFunc("POST /user/{login}/{id}/status", postToggleStatus) //Обновление статуса задачи
-
-	http.HandleFunc("DELETE /task/{id}/del", deleteTask)    //Удаление задачи
-	http.HandleFunc("DELETE /user/{login}/del", deleteUser) //Удаление пользователя
+	mainMux := http.NewServeMux()
+	APImux := http.NewServeMux()
 
 	fileServer := http.FileServer(http.Dir("./templates/static/"))
-	http.Handle("/JS_CSS/", http.StripPrefix("/JS_CSS", fileServer))
+	mainMux.Handle("/JS_CSS/", http.StripPrefix("/JS_CSS", fileServer))
 
-	http.HandleFunc("/", index)
+	/*Регистрация маршрутов для с токенами*/
+	APImux.HandleFunc("POST /user/{login}/new/task", postNewTask)         //Новая задача
+	APImux.HandleFunc("POST /user/{login}/{id}/status", postToggleStatus) //Обновление статуса задачи
+
+	APImux.HandleFunc("DELETE /task/{id}/del", deleteTask)    //Удаление задачи
+	APImux.HandleFunc("DELETE /user/{login}/del", deleteUser) //Удаление пользователя
+
+	/*Регистрация APImux по всем маршрутам /api/XXXX*/
+	mainMux.Handle("/api/", http.StripPrefix("/api", middleWare(APImux)))
+
+	/*регистрация маршрутов, где нет токена*/
+	/*В заголовке token в ответе идёт токен*/
+	mainMux.HandleFunc("POST /new/user", postNewUser) //Новый пользователь Query: ?password=123456&login=qwerty
+	mainMux.HandleFunc("GET /content", getContent)
+	mainMux.HandleFunc("GET /user/{login}", getUserLogin) //Задачи пользователя Query: ?password=123456
+
+	mainMux.HandleFunc("/", index)
 
 	fmt.Println("Listening 5000 . . .")
-	http.ListenAndServe("localhost:5000", nil)
+	http.ListenAndServe("localhost:5000", mainMux)
 }

@@ -12,6 +12,7 @@ async function getUser(login, pass) {
             document.getElementById("main").innerHTML = await res.text();
             sessionStorage.setItem("login", login);
             sessionStorage.setItem("pass", pass);
+            sessionStorage.setItem("token", res.headers.get("token"));
         } else {
             let resTXT = await res.text()
             if (res.status === 404) {
@@ -24,8 +25,7 @@ async function getUser(login, pass) {
 }
 
 async function exit() {
-    sessionStorage.removeItem("login");
-    sessionStorage.removeItem("pass");
+    sessionStorage.clear()
 
     let res = await fetch("/content");
     let rt = await res.text();
@@ -44,7 +44,12 @@ async function start() {
 
 async function toggleStatus(id) {
     const log = sessionStorage.getItem("login");
-    let resp = await fetch(`/user/${log}/${id}/status`, {method: "POST"});
+    let head = new Headers()
+    head.append("token", sessionStorage.getItem("token"))
+    let resp = await fetch(`/api/user/${log}/${id}/status`, {
+        method: "POST",
+        headers: head
+    });
     let resTXT = await resp.text();
     alert(resTXT);
     if (resp.status == 200) {
@@ -83,9 +88,12 @@ async function newToDo() {
 
     let strToSend = JSON.stringify(toSend);
 
-    let resp = await fetch(`/user/${sessionStorage.getItem("login")}/new/task`, {
+    let head = new Headers()
+    head.append("token", sessionStorage.getItem("token"))
+    let resp = await fetch(`/api/user/${sessionStorage.getItem("login")}/new/task`, {
         method: "POST", 
-        body: strToSend
+        body: strToSend,
+        headers: head
     });
 
     const respText = await resp.text()
@@ -100,9 +108,12 @@ async function newToDo() {
 async function deleteAccount() {
     let answ = prompt("Для подтверждения удаления ответьте на вопрос!\n2 + 2 = ");
     if (answ === "4") {
+        let head = new Headers()
+        head.append("token", sessionStorage.getItem("token"))
         const login = sessionStorage.getItem("login");
-        let resp = await fetch(`/user/${login}/del`, {
-            method: "DELETE"
+        let resp = await fetch(`/api/user/${login}/del`, {
+            method: "DELETE",
+            headers: head
         });
 
         let rText = await resp.text()
@@ -118,8 +129,11 @@ async function deleteAccount() {
 }
 
 async function deleteTask(id) {
-    let resp = await fetch(`/task/${id}/del`, {
-        method: "DELETE"
+    let head = new Headers()
+    head.append("token", sessionStorage.getItem("token"))
+    let resp = await fetch(`/api/task/${id}/del`, {
+        method: "DELETE",
+        headers: head
     });
 
     let rText = await resp.text()

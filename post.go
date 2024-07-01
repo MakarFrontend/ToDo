@@ -5,6 +5,8 @@ import (
 	"ToDo/structs"
 	"encoding/json"
 	"io"
+	"log"
+	"math/rand"
 	"net/http"
 )
 
@@ -27,7 +29,14 @@ func postNewUser(w http.ResponseWriter, r *http.Request) {
 		}
 		defer db.Close()
 
-		res, err := db.Exec(appendUser, log, pass)
+		dataForToken := []string{"q", "r", "u", "v", "c", "5", "7", "m", "l", "p", "8", "z", "1", "2", "f", "g", "h", "y"}
+		var token string
+		for i := 0; i < 3; i++ {
+			newLetterToToken := dataForToken[rand.Intn(len(dataForToken))]
+			token = token + newLetterToToken
+		}
+
+		res, err := db.Exec(appendUser, log, pass, token)
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte("Ошибка на сервере, извините"))
@@ -49,6 +58,7 @@ func postNewUser(w http.ResponseWriter, r *http.Request) {
 func postNewTask(w http.ResponseWriter, r *http.Request) {
 	rByteData, err := io.ReadAll(r.Body)
 	if err != nil { //Не смогли прочитать тело запроса
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Ошибка на сервере, извините"))
 		return
@@ -58,6 +68,7 @@ func postNewTask(w http.ResponseWriter, r *http.Request) {
 	var newToDo structs.MyToDo
 	err = json.Unmarshal(rByteData, &newToDo)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Ошибка на сервере, извините"))
 		return
@@ -67,6 +78,7 @@ func postNewTask(w http.ResponseWriter, r *http.Request) {
 	if !newToDo.Status && newToDo.Tag != "" && newToDo.Text != "" {
 		err := newToDo.Insert(r.PathValue("login"))
 		if err != nil {
+			log.Println(err)
 			w.WriteHeader(500)
 			w.Write([]byte("Ошибка на сервере, извините"))
 			return
@@ -84,6 +96,7 @@ func postNewTask(w http.ResponseWriter, r *http.Request) {
 func postToggleStatus(w http.ResponseWriter, r *http.Request) {
 	db, err := getDB.GetDB()
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(500)
 		w.Write([]byte("Ошибка на сервере, извините"))
 		return
@@ -95,6 +108,7 @@ func postToggleStatus(w http.ResponseWriter, r *http.Request) {
 
 	res, err := db.Exec(toggleTaskStatus, login, todoId)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(500)
 		w.Write([]byte("Ошибка на сервере, извините"))
 		return
@@ -102,6 +116,7 @@ func postToggleStatus(w http.ResponseWriter, r *http.Request) {
 
 	rowsAff, err := res.RowsAffected()
 	if err != nil || rowsAff == 0 {
+		log.Println(err)
 		w.WriteHeader(500)
 		w.Write([]byte("Ошибка на сервере, извините"))
 		return
